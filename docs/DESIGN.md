@@ -49,8 +49,8 @@ Streamlit向け軽量RBACライブラリ 設計書
 
 ```text
 ┌─────────────────────────────────────┐
-│   Streamlit統合レイヤー              │  guard_page(), session_role_loader()
-│   Streamlitのセッション・UIと連携    │  user_attr_role_loader()
+│   Streamlit統合レイヤー              │  authorize_page()
+│   Streamlitのセッション・UIと連携    │
 ├─────────────────────────────────────┤
 │   デコレータレイヤー                 │  @require_roles()
 │   関数への宣言的アクセス制御         │
@@ -325,7 +325,7 @@ from streamlit_rbac._core import has_any_role
 from streamlit_rbac._types import RoleLoader
 
 
-def guard_page(
+def authorize_page(
     *allowed_roles: str,
     role_loader: RoleLoader,
     login_url: str | None = None,
@@ -347,51 +347,15 @@ def guard_page(
     if not has_any_role(*allowed_roles, user_roles=user_roles):
         st.error(denied_message)
         st.stop()
-
-
-def session_role_loader(
-    session_key: str = "user_roles",
-) -> RoleLoader:
-    """st.session_state からロール一覧を取得するローダーを生成する."""
-
-    def loader() -> list[str]:
-        import streamlit as st
-
-        roles = st.session_state.get(session_key, [])
-        if not isinstance(roles, (list, tuple, set, frozenset)):
-            return []
-        return list(roles)
-
-    return loader
-
-
-def user_attr_role_loader(
-    user_session_key: str = "user",
-    role_attr: str = "roles",
-) -> RoleLoader:
-    """st.session_state のユーザーオブジェクトからロールを取得するローダーを生成する."""
-
-    def loader() -> list[str]:
-        import streamlit as st
-
-        user: Any = st.session_state.get(user_session_key)
-        if user is None:
-            return []
-        roles = getattr(user, role_attr, [])
-        if not isinstance(roles, (list, tuple, set, frozenset)):
-            return []
-        return list(roles)
-
-    return loader
 ```
 
 #### 設計判断: Streamlit統合
 
 **`streamlit` の遅延importを採用した理由:** `import streamlit` を関数内で行うことで、コア機能・デコレータのみを使用する場合に `streamlit` がインストールされていなくてもimportエラーが発生しない。これによりオプショナル依存の意図を実現する。
 
-**ロールローダー内での型バリデーション:** `session_role_loader` および `user_attr_role_loader` は、session_stateから取得した値が期待する型でない場合に空リストを返す。これは防御的プログラミングの観点から、実行時エラーをユーザーに露出させないための措置である。
+**組み込みロールローダーを提供しない理由:** ライブラリの設計方針は「ロール取得は開発者の責任」であり、`st.session_state` の構造に依存するローダーをライブラリ側で提供することはスコープの拡大にあたる。`RoleLoader` 型をインターフェースとして定義し、実装は開発者に委ねる。
 
-**未ログイン判定の分離:** `guard_page` は role_loader が空リストを返した場合を「未ログイン」と推定し、`login_url` が指定されている場合はログインページへのリンクを表示する。これは認可ライブラリの責務をやや逸脱するが、Streamlitにおける実用性を優先した。
+**未ログイン判定の分離:** `authorize_page` は role_loader が空リストを返した場合を「未ログイン」と推定し、`login_url` が指定されている場合はログインページへのリンクを表示する。これは認可ライブラリの責務をやや逸脱するが、Streamlitにおける実用性を優先した。
 
 ### 3.5 \_\_init\_\_.py
 
@@ -414,22 +378,9 @@ __all__ = [
 
 def __getattr__(name: str):
     """Streamlit統合モジュールの遅延import."""
-    _streamlit_names = {
-        "guard_page",
-        "session_role_loader",
-        "user_attr_role_loader",
-    }
-    if name in _streamlit_names:
-        from streamlit_rbac._streamlit import (
-            guard_page,
-            session_role_loader,
-            user_attr_role_loader,
-        )
-        return {
-            "guard_page": guard_page,
-            "session_role_loader": session_role_loader,
-            "user_attr_role_loader": user_attr_role_loader,
-        }[name]
+    if name == "authorize_page":
+        from streamlit_rbac._streamlit import authorize_page
+        return authorize_page
     raise AttributeError(f"module 'streamlit_rbac' has no attribute {name!r}")
 ```
 
@@ -437,9 +388,10 @@ def __getattr__(name: str):
 
 モジュールレベルの `__getattr__`（PEP 562）を使用し、Streamlit統合のシンボルを初回アクセス時にimportする。これにより以下を実現する。
 
-- `from streamlit_rbac import guard_page` は `streamlit` がインストールされていない環境でもimport自体はエラーにならない
-- `guard_page()` の呼び出し時に初めて `streamlit` のimportが試行される
+- `from streamlit_rbac import authorize_page` は `streamlit` がインストールされていない環境でもimport自体はエラーにならない
+- `authorize_page()` の呼び出し時に初めて `streamlit` のimportが試行される
 - コア機能のみを使用するユーザーは `streamlit` を依存に含める必要がない
+- Streamlit統合の公開APIは `authorize_page` のみであり、`__getattr__` のルックアップ対象もこの1つに限定している
 
 ---
 
@@ -464,7 +416,7 @@ def __getattr__(name: str):
 | コア判定 | `has_role`, `has_any_role`, `has_all_roles` | パラメタライズドテスト | なし |
 | コア判定 | `_resolve_roles` | 排他チェックの異常系テスト | なし |
 | デコレータ | `require_roles` | デコレート済み関数の呼び出しテスト | なし |
-| Streamlit統合 | `guard_page`, ローダー関数 | `st.session_state` のモック | モック使用 |
+| Streamlit統合 | `authorize_page` | `st.session_state` のモック | モック使用 |
 
 ### 5.2 test_core.py
 
@@ -625,73 +577,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-class TestSessionRoleLoader:
-
-    def test_returns_roles_from_session(self) -> None:
-        mock_st = MagicMock()
-        mock_st.session_state = {"user_roles": ["Admin", "User"]}
-
-        with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import session_role_loader
-
-            loader = session_role_loader()
-            assert loader() == ["Admin", "User"]
-
-    def test_returns_empty_when_key_missing(self) -> None:
-        mock_st = MagicMock()
-        mock_st.session_state = {}
-
-        with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import session_role_loader
-
-            loader = session_role_loader()
-            assert loader() == []
-
-    def test_returns_empty_for_invalid_type(self) -> None:
-        mock_st = MagicMock()
-        mock_st.session_state = {"user_roles": "not_a_list"}
-
-        with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import session_role_loader
-
-            loader = session_role_loader()
-            assert loader() == []
-
-
-class TestUserAttrRoleLoader:
-
-    def test_returns_roles_from_user_object(self) -> None:
-        mock_st = MagicMock()
-        user = MagicMock()
-        user.roles = ["Admin"]
-        mock_st.session_state = {"user": user}
-
-        with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import user_attr_role_loader
-
-            loader = user_attr_role_loader()
-            assert loader() == ["Admin"]
-
-    def test_returns_empty_when_user_missing(self) -> None:
-        mock_st = MagicMock()
-        mock_st.session_state = {}
-
-        with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import user_attr_role_loader
-
-            loader = user_attr_role_loader()
-            assert loader() == []
-
-
-class TestGuardPage:
+class TestAuthorizePage:
 
     def test_allowed(self) -> None:
         mock_st = MagicMock()
 
         with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import guard_page
+            from streamlit_rbac._streamlit import authorize_page
 
-            guard_page("Admin", role_loader=lambda: ["Admin"])
+            authorize_page("Admin", role_loader=lambda: ["Admin"])
             mock_st.error.assert_not_called()
             mock_st.stop.assert_not_called()
 
@@ -699,9 +593,9 @@ class TestGuardPage:
         mock_st = MagicMock()
 
         with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import guard_page
+            from streamlit_rbac._streamlit import authorize_page
 
-            guard_page("Admin", role_loader=lambda: ["User"])
+            authorize_page("Admin", role_loader=lambda: ["User"])
             mock_st.error.assert_called_once()
             mock_st.stop.assert_called_once()
 
@@ -709,9 +603,9 @@ class TestGuardPage:
         mock_st = MagicMock()
 
         with patch.dict("sys.modules", {"streamlit": mock_st}):
-            from streamlit_rbac._streamlit import guard_page
+            from streamlit_rbac._streamlit import authorize_page
 
-            guard_page("Admin", role_loader=lambda: [], login_url="/login")
+            authorize_page("Admin", role_loader=lambda: [], login_url="/login")
             mock_st.warning.assert_called_once()
             mock_st.link_button.assert_called_once_with(
                 "ログインページへ", "/login"
@@ -732,9 +626,7 @@ class TestGuardPage:
 | REQ-5 | 排他的パラメータ検証 | `_core._resolve_roles` | `TestHasRole.test_mutual_exclusion_*` |
 | REQ-6 | 関数へのアクセス制御 | `_decorators.require_roles` | `TestRequireRoles.test_allowed/denied` |
 | REQ-7 | カスタム拒否ハンドラ | `_decorators.require_roles` | `TestRequireRoles.test_on_denied_*` |
-| REQ-8 | ページガード関数 | `_streamlit.guard_page` | `TestGuardPage` |
-| REQ-9 | セッションベースのローダー | `_streamlit.session_role_loader` | `TestSessionRoleLoader` |
-| REQ-10 | ユーザーオブジェクトベースのローダー | `_streamlit.user_attr_role_loader` | `TestUserAttrRoleLoader` |
+| REQ-8 | ページガード関数 | `_streamlit.authorize_page` | `TestAuthorizePage` |
 
 ---
 
@@ -743,7 +635,7 @@ class TestGuardPage:
 | 項目 | 内容 | 優先度 |
 | ------ | ------ | -------- |
 | `denied_message` のデフォルト言語 | 英語に変更するか、i18n対応するか | 中 |
-| `guard_page` の戻り値 | `None` ではなく `bool` を返して `st.stop()` を呼び出し側に委ねる案 | 低 |
+| `authorize_page` の戻り値 | `None` ではなく `bool` を返して `st.stop()` を呼び出し側に委ねる案 | 低 |
 | `py.typed` マーカーの同梱 | PEP 561準拠の型情報配布 | 高 |
 | `_exceptions.py` の活用 | v1.0で独自例外が必要になった場合の拡張ポイントとして保持 | 低 |
 | ロールの正規化オプション | case-insensitive比較のオプション提供 | 低 |

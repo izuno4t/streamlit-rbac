@@ -18,13 +18,8 @@ __version__ = "0.1.0"
 
 def __getattr__(name: str) -> object:
     """Streamlit統合モジュールの遅延import."""
-    _streamlit_names = {
-        "guard_page",
-        "session_role_loader",
-        "user_attr_role_loader",
-    }
-    if name in _streamlit_names:
+    if name == "authorize_page":
         from streamlit_rbac import _streamlit  # noqa: PLC0415
 
-        return getattr(_streamlit, name)
+        return _streamlit.authorize_page
     raise AttributeError(f"module 'streamlit_rbac' has no attribute {name!r}")

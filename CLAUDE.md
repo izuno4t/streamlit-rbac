@@ -40,7 +40,7 @@ Three-layer architecture with downward-only dependencies:
 
 ```
 Streamlit Integration (_streamlit.py)  ← depends on streamlit (optional)
-  guard_page(), session_role_loader(), user_attr_role_loader()
+  authorize_page()
 
 Decorator (_decorators.py)             ← depends on core only
   @require_roles()
@@ -61,7 +61,7 @@ All internal modules are prefixed with `_`. Users import from `streamlit_rbac` d
 - Roles are case-sensitive strings
 - `_resolve_roles()` returns `frozenset` for set-operation efficiency
 - `@require_roles` uses OR logic; always raises `PermissionError` (even after `on_denied` callback)
-- `guard_page()` never raises — uses `st.error()` + `st.stop()` instead
+- `authorize_page()` never raises — uses `st.error()` + `st.stop()` instead
 - Streamlit is imported inside functions, not at module level (optional dependency pattern)
 - `ParamSpec`/`TypeVar` preserve decorated function signatures for mypy strict
 
@@ -74,6 +74,6 @@ All internal modules are prefixed with `_`. Users import from `streamlit_rbac` d
 ## Specifications
 
 Detailed requirements, API spec, and internal design are in `docs/`:
-- `docs/REQUIREMENTS.md` — 10 functional requirements (REQ-1 through REQ-10)
+- `docs/REQUIREMENTS.md` — 8 functional requirements (REQ-1 through REQ-8)
 - `docs/SPECIFICATION.md` — External API behavior and integration scenarios
 - `docs/DESIGN.md` — Internal module design with reference implementations and test examples

@@ -77,7 +77,7 @@ Streamlitはデータ分析やAIアプリケーションの迅速な開発に適
 | `hasRole("ADMIN")` | `has_role("Admin", ...)` |
 | `hasAnyRole("A", "B")` | `has_any_role("A", "B", ...)` |
 | `@PreAuthorize(...)` | `@require_roles(...)` |
-| `SecurityFilterChain` | `guard_page(...)` |
+| `SecurityFilterChain` | `authorize_page(...)` |
 | `UserDetails.getAuthorities()` | `role_loader`関数 |
 
 ### 2.2 アーキテクチャ
@@ -88,7 +88,7 @@ Streamlitはデータ分析やAIアプリケーションの迅速な開発に適
 | --------- | ------ |
 | コア判定関数 | `has_role()`, `has_any_role()`, `has_all_roles()` - 状態を持たない純粋関数 |
 | デコレータ | `@require_roles()` - 関数・メソッドへの宣言的アクセス制御 |
-| Streamlit統合 | `guard_page()`, ロールローダー - `st.session_state`との連携 |
+| Streamlit統合 | `authorize_page()`, ロールローダー - `st.session_state`との連携 |
 
 ---
 
@@ -152,23 +152,11 @@ def admin_function():
 
 #### REQ-8: ページガード関数
 
-`guard_page()`関数により、ページ先頭でアクセス制御を行う。権限がない場合は`st.error()`でメッセージを表示し、`st.stop()`で処理を停止する。
+`authorize_page()`関数により、ページ先頭でアクセス制御を行う。権限がない場合は`st.error()`でメッセージを表示し、`st.stop()`で処理を停止する。
 
 ```python
-guard_page("Admin", role_loader=get_user_roles)
+authorize_page("Admin", role_loader=get_user_roles)
 ```
-
-#### REQ-9: セッションベースのロールローダー
-
-`st.session_state`からロールを取得する組み込みローダーを提供する。
-
-```python
-session_role_loader(session_key="user_roles")
-```
-
-#### REQ-10: ユーザーオブジェクトベースのロールローダー
-
-`st.session_state`に格納されたユーザーオブジェクトの属性からロールを取得する組み込みローダーを提供する。
 
 ---
 
@@ -221,7 +209,7 @@ session_role_loader(session_key="user_roles")
 
 ### 4.3 Streamlit統合
 
-#### guard_page()
+#### authorize_page()
 
 | パラメータ | 型 | 説明 |
 | ----------- | ----- | ------ |
@@ -230,23 +218,6 @@ session_role_loader(session_key="user_roles")
 | `login_url` | `str \| None` | 未ログイン時のリダイレクト先 |
 
 **動作:** 権限がない場合、`st.error()`表示後に`st.stop()`で処理停止
-
-#### session_role_loader()
-
-| パラメータ | 型 | 説明 |
-| ----------- | ----- | ------ |
-| `session_key` | `str` | `st.session_state`のキー（デフォルト: `"user_roles"`） |
-
-**戻り値:** `Callable[[], Iterable[str]]` - ロールローダー関数
-
-#### user_attr_role_loader()
-
-| パラメータ | 型 | 説明 |
-| ----------- | ----- | ------ |
-| `user_session_key` | `str` | ユーザーオブジェクトのキー（デフォルト: `"user"`） |
-| `role_attr` | `str` | ロール属性名（デフォルト: `"roles"`） |
-
-**戻り値:** `Callable[[], Iterable[str]]` - ロールローダー関数
 
 ---
 
@@ -272,7 +243,7 @@ def get_user_roles() -> list[str]:
     return user.roles
 
 # pages/admin.py - ページガード
-guard_page("Admin", role_loader=get_user_roles)
+authorize_page("Admin", role_loader=get_user_roles)
 st.title("管理者ページ")
 
 # コンポーネント単位の制御
@@ -290,7 +261,7 @@ def entra_role_loader() -> list[str]:
     return token_claims.get("roles", [])
 
 # 使用
-guard_page("Admin", role_loader=entra_role_loader)
+authorize_page("Admin", role_loader=entra_role_loader)
 ```
 
 ---

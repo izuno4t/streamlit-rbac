@@ -11,7 +11,7 @@ Inspired by Spring Security's authorization API,
 - **Pure function core** — `has_role()`, `has_any_role()`, `has_all_roles()` are stateless
   and side-effect-free, making them trivial to unit test.
 - **Declarative decorator** — `@require_roles()` guards functions with a single line.
-- **Streamlit integration** — `guard_page()` stops unauthorized page rendering via `st.stop()`.
+- **Streamlit integration** — `authorize_page()` stops unauthorized page rendering via `st.stop()`.
 - **Bring your own auth** — inject any `role_loader` function to resolve roles
   from Entra ID tokens, session state, databases, or anything else.
 - **Zero required dependencies** — core functions use only the Python standard library. Streamlit is an optional dependency.
@@ -84,33 +84,19 @@ def delete_user(user_id: str) -> None:
 
 ```python
 import streamlit as st
-from streamlit_rbac import guard_page
+from streamlit_rbac import authorize_page
 
 def get_user_roles() -> list[str]:
     claims = st.session_state.get("token_claims", {})
     return claims.get("roles", [])
 
 # Place at the top of each page script
-guard_page("Admin", role_loader=get_user_roles)
+authorize_page("Admin", role_loader=get_user_roles)
 
 st.title("Admin Page")  # Only rendered if authorized
 ```
 
-If the user lacks the required role, `guard_page` displays an error message and calls `st.stop()` — nothing below it executes.
-
-### Built-in role loaders
-
-For common Streamlit patterns:
-
-```python
-from streamlit_rbac import guard_page, session_role_loader, user_attr_role_loader
-
-# Read roles directly from st.session_state["user_roles"]
-guard_page("Admin", role_loader=session_role_loader())
-
-# Read roles from a user object: st.session_state["user"].roles
-guard_page("Admin", role_loader=user_attr_role_loader())
-```
+If the user lacks the required role, `authorize_page` displays an error message and calls `st.stop()` — nothing below it executes.
 
 ## Microsoft Entra ID Integration
 
@@ -119,13 +105,13 @@ Once you have token claims in session state, wire up a role loader:
 
 ```python
 import streamlit as st
-from streamlit_rbac import guard_page
+from streamlit_rbac import authorize_page
 
 def entra_role_loader() -> list[str]:
     token_claims = st.session_state.get("token_claims", {})
     return token_claims.get("roles", [])
 
-guard_page("Admin", role_loader=entra_role_loader)
+authorize_page("Admin", role_loader=entra_role_loader)
 ```
 
 ## Component-Level Control
@@ -133,9 +119,9 @@ guard_page("Admin", role_loader=entra_role_loader)
 Mix page guards with inline checks for fine-grained control:
 
 ```python
-from streamlit_rbac import guard_page, has_role
+from streamlit_rbac import authorize_page, has_role
 
-guard_page("User", "Admin", role_loader=get_user_roles)
+authorize_page("User", "Admin", role_loader=get_user_roles)
 st.title("Dashboard")
 
 # Only SuperAdmins see this section
@@ -169,9 +155,7 @@ All return `bool`. All raise `ValueError` if both or neither of `user_roles` / `
 
 | Function | Description |
 | -------- | ----------- |
-| `guard_page(*roles, *, role_loader, login_url=None, denied_message=...)` | Page-level guard. Calls `st.stop()` on denial. |
-| `session_role_loader(session_key="user_roles")` | Factory: reads roles from `st.session_state[key]` |
-| `user_attr_role_loader(user_session_key="user", role_attr="roles")` | Factory: reads roles from a user object in session state |
+| `authorize_page(*roles, *, role_loader, login_url=None, denied_message=...)` | Page-level guard. Calls `st.stop()` on denial. |
 
 ### Types
 
@@ -192,7 +176,7 @@ The library never dictates where roles come from.
 
 **Pure core, optional integration.**
 Core functions have zero dependencies.
-Streamlit is only imported when you use `guard_page()` or the built-in loaders.
+Streamlit is only imported when you use `authorize_page()`.
 
 **Spring Security heritage, Pythonic API.**
 Familiar concepts (`hasRole` → `has_role`, `@PreAuthorize` → `@require_roles`),

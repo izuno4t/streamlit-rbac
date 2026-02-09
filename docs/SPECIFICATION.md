@@ -28,9 +28,7 @@ Streamlit向け軽量RBACライブラリ アプリケーション仕様書
 - [4. デコレータ](#4-デコレータ)
   - [4.1 @require_roles()](#41-require_roles)
 - [5. Streamlit統合](#5-streamlit統合)
-  - [5.1 guard_page()](#51-guard_page)
-  - [5.2 session_role_loader()](#52-session_role_loader)
-  - [5.3 user_attr_role_loader()](#53-user_attr_role_loader)
+  - [5.1 authorize_page()](#51-authorize_page)
 - [6. エラー仕様](#6-エラー仕様)
 - [7. 統合シナリオ](#7-統合シナリオ)
   - [7.1 Microsoft Entra ID連携](#71-microsoft-entra-id連携)
@@ -246,14 +244,14 @@ def sensitive_action() -> None:
 
 ## 5. Streamlit統合
 
-### 5.1 guard_page()
+### 5.1 authorize_page()
 
 **対応要件:** REQ-8
 
 ページスクリプトの先頭で呼び出し、アクセス制御を行う関数。権限がない場合はStreamlitのUIにメッセージを表示し、後続の処理を停止する。
 
 ```python
-guard_page(
+authorize_page(
     *allowed_roles: str,
     role_loader: RoleLoader,
     login_url: str | None = None,
@@ -277,81 +275,17 @@ role_loader() を呼び出し
        └─ st.error(denied_message) + st.stop()
 ```
 
-`guard_page` は例外を送出しない。`st.stop()` によりStreamlitのスクリプト実行が停止し、この関数以降のコードは実行されない。
+`authorize_page` は例外を送出しない。`st.stop()` によりStreamlitのスクリプト実行が停止し、この関数以降のコードは実行されない。
 
 **使用例:**
 
 ```python
 # pages/admin.py
-guard_page("Admin", role_loader=get_user_roles)
+authorize_page("Admin", role_loader=get_user_roles)
 st.title("管理者ページ")  # 権限がない場合、ここには到達しない
 
 # ログインURLを指定する場合
-guard_page("Admin", role_loader=get_user_roles, login_url="/login")
-```
-
-### 5.2 session_role_loader()
-
-**対応要件:** REQ-9
-
-`st.session_state` からロール一覧を直接取得するローダーを生成するファクトリ関数。
-
-```python
-session_role_loader(
-    session_key: str = "user_roles",
-) -> RoleLoader
-```
-
-**振る舞い:**
-
-| `st.session_state[session_key]` の状態 | ローダーの戻り値 |
-| --------------------------------------- | ---------------- |
-| `list[str]` / `tuple` / `set` / `frozenset` | その内容をリストで返却 |
-| キーが存在しない | `[]` |
-| 上記以外の型（`str`, `int` 等） | `[]` |
-
-**使用例:**
-
-```python
-# st.session_state["user_roles"] = ["Admin", "User"]
-loader = session_role_loader()
-guard_page("Admin", role_loader=loader)
-
-# カスタムキー
-loader = session_role_loader(session_key="my_roles")
-```
-
-### 5.3 user_attr_role_loader()
-
-**対応要件:** REQ-10
-
-`st.session_state` に格納されたユーザーオブジェクトの属性からロールを取得するローダーを生成するファクトリ関数。
-
-```python
-user_attr_role_loader(
-    user_session_key: str = "user",
-    role_attr: str = "roles",
-) -> RoleLoader
-```
-
-**振る舞い:**
-
-| 状態 | ローダーの戻り値 |
-| ------ | ---------------- |
-| `session_state[user_session_key]` が存在し、`role_attr` 属性を持つ | その属性値をリストで返却 |
-| `session_state[user_session_key]` が `None` / キー不在 | `[]` |
-| `role_attr` 属性が存在しない | `[]` |
-| 属性値が `list` / `tuple` / `set` / `frozenset` でない | `[]` |
-
-**使用例:**
-
-```python
-# st.session_state["user"] = User(roles=["Admin", "User"])
-loader = user_attr_role_loader()
-guard_page("Admin", role_loader=loader)
-
-# カスタムキー・属性名
-loader = user_attr_role_loader(user_session_key="current_user", role_attr="granted_roles")
+authorize_page("Admin", role_loader=get_user_roles, login_url="/login")
 ```
 
 ---
@@ -366,7 +300,7 @@ loader = user_attr_role_loader(user_session_key="current_user", role_attr="grant
 | `ValueError` | コア判定関数 | `user_roles` と `role_loader` のどちらも指定されない | `"Either user_roles or role_loader must be specified."` |
 | `PermissionError` | `@require_roles` | ロール判定で権限不足と判定された | `"Access denied: required one of (...)"` |
 
-`guard_page` は例外を送出せず、`st.error()` + `st.stop()` でページ描画を停止する。
+`authorize_page` は例外を送出せず、`st.error()` + `st.stop()` でページ描画を停止する。
 
 ---
 
@@ -393,7 +327,7 @@ loader = user_attr_role_loader(user_session_key="current_user", role_attr="grant
                         │
                         ▼
                  ┌──────────────┐
-                 │ guard_page() │  ロール判定 → 許可 or 停止
+                 │ authorize_page() │  ロール判定 → 許可 or 停止
                  │ has_role()   │
                  └──────────────┘
 ```
@@ -403,7 +337,7 @@ def entra_role_loader() -> list[str]:
     token_claims = st.session_state.get("token_claims", {})
     return token_claims.get("roles", [])
 
-guard_page("Admin", role_loader=entra_role_loader)
+authorize_page("Admin", role_loader=entra_role_loader)
 ```
 
 ### 7.2 マルチページアプリケーション構成例
@@ -415,11 +349,11 @@ def get_user_roles() -> list[str]:
     return claims.get("roles", [])
 
 # pages/dashboard.py - 複数ロール許可
-guard_page("User", "Admin", role_loader=get_user_roles)
+authorize_page("User", "Admin", role_loader=get_user_roles)
 st.title("ダッシュボード")
 
 # pages/admin.py - ページガード + コンポーネント単位の制御
-guard_page("Admin", role_loader=get_user_roles)
+authorize_page("Admin", role_loader=get_user_roles)
 st.title("管理者ページ")
 
 if has_role("SuperAdmin", role_loader=get_user_roles):
@@ -453,6 +387,4 @@ if has_role("SuperAdmin", role_loader=get_user_roles):
 | REQ-5 | 排他的パラメータ検証 | コア判定関数共通 |
 | REQ-6 | 関数へのアクセス制御 | `@require_roles()` |
 | REQ-7 | カスタム拒否ハンドラ | `@require_roles(on_denied=...)` |
-| REQ-8 | ページガード関数 | `guard_page()` |
-| REQ-9 | セッションベースのローダー | `session_role_loader()` |
-| REQ-10 | ユーザーオブジェクトベースのローダー | `user_attr_role_loader()` |
+| REQ-8 | ページガード関数 | `authorize_page()` |

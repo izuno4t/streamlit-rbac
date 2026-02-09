@@ -31,20 +31,10 @@ class TestPublicApi:
 
 
 class TestLazyImport:
-    def test_guard_page_importable(self) -> None:
-        from streamlit_rbac import guard_page
+    def test_authorize_page_importable(self) -> None:
+        from streamlit_rbac import authorize_page
 
-        assert callable(guard_page)
-
-    def test_session_role_loader_importable(self) -> None:
-        from streamlit_rbac import session_role_loader
-
-        assert callable(session_role_loader)
-
-    def test_user_attr_role_loader_importable(self) -> None:
-        from streamlit_rbac import user_attr_role_loader
-
-        assert callable(user_attr_role_loader)
+        assert callable(authorize_page)
 
     def test_invalid_attribute_raises_error(self) -> None:
         with pytest.raises(AttributeError, match="no_such_function"):
