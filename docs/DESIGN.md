@@ -101,7 +101,7 @@ streamlit-rbac/
 name = "streamlit-rbac"
 version = "0.1.0"
 description = "Lightweight RBAC library for Streamlit applications"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 dependencies = []
 
@@ -132,7 +132,7 @@ select = ["E", "F", "I", "N", "UP", "B", "A", "SIM", "TCH"]
 testpaths = ["tests"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 
 [tool.coverage.run]

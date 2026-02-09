@@ -7,7 +7,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-.dist/
-.build/
+dist/
+build/
 *.egg-info/
 .claude/settings.local.json

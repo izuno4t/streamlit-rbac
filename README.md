@@ -25,7 +25,7 @@ pip install streamlit-rbac
 pip install streamlit-rbac[streamlit]
 ```
 
-> **Requires Python 3.10+**
+> **Requires Python 3.11+**
 
 ## Quick Start
 

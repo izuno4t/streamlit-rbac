@@ -258,7 +258,7 @@ if has_role("Admin", role_loader=get_user_roles):
 
 | 項目 | 要件 |
 | ------ | ------ |
-| Python バージョン | 3.10以上 |
+| Python バージョン | 3.11以上 |
 | 依存関係 | コア機能は標準ライブラリのみ。Streamlit統合は`streamlit`をオプショナル依存とする |
 | テストカバレッジ | 90%以上 |
 | 型ヒント | すべての公開APIに型ヒントを付与 |
