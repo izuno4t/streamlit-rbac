@@ -31,16 +31,17 @@ Goal: streamlit-rbac v0.1.0 の全機能実装・テスト・品質チェック�
 
 | ID | ステータス | 概要 | 依存先 |
 | ---- | ---- | ---- | ---- |
-| TASK-001 | ⏳ | pyproject.tomlにstreamlit optional依存とメタデータを追記する | - |
-| TASK-002 | ⏳ | _types.pyに型エイリアス（RoleLoader, OnDeniedHandler）を定義する | - |
-| TASK-003 | ⏳ | _core.pyにロール判定関数（_resolve_roles, has_role, has_any_role, has_all_roles）を実装する | TASK-002 |
-| TASK-004 | ⏳ | test_core.pyにコア判定関数のパラメタライズドテストを作成する | TASK-003 |
-| TASK-005 | ⏳ | _decorators.pyに@require_rolesデコレータを実装する | TASK-003 |
-| TASK-006 | ⏳ | test_decorators.pyにデコレータのテストを作成する | TASK-005 |
-| TASK-007 | ⏳ | _streamlit.pyにguard_page, session_role_loader, user_attr_role_loaderを実装する | TASK-003 |
-| TASK-008 | ⏳ | test_streamlit.pyにStreamlit統合層のモックテストを作成する | TASK-007 |
-| TASK-009 | ⏳ | __init__.pyに公開APIのre-exportとStreamlit遅延インポートを実装する | TASK-003,TASK-005,TASK-007 |
-| TASK-010 | ⏳ | 全テスト実行・カバレッジ90%以上・lint・型チェックを通過させる | TASK-004,TASK-006,TASK-008,TASK-009 |
+| TASK-001 | ✅ | pyproject.tomlにstreamlit optional依存とメタデータを追記する | - |
+| TASK-002 | ✅ | _types.pyに型エイリアス（RoleLoader, OnDeniedHandler）を定義する | - |
+| TASK-003 | ✅ | _core.pyにロール判定関数（_resolve_roles, has_role, has_any_role, has_all_roles）を実装する | TASK-002 |
+| TASK-004 | ✅ | test_core.pyにコア判定関数のパラメタライズドテストを作成する | TASK-003 |
+| TASK-005 | ✅ | _decorators.pyに@require_rolesデコレータを実装する | TASK-003 |
+| TASK-006 | ✅ | test_decorators.pyにデコレータのテストを作成する | TASK-005 |
+| TASK-007 | ✅ | _streamlit.pyにguard_page, session_role_loader, user_attr_role_loaderを実装する | TASK-003 |
+| TASK-008 | ✅ | test_streamlit.pyにStreamlit統合層のモックテストを作成する | TASK-007 |
+| TASK-009 | ✅ | __init__.pyに公開APIのre-exportとStreamlit遅延インポートを実装する | TASK-003,TASK-005,TASK-007 |
+| TASK-010 | ✅ | 全テスト実行・カバレッジ90%以上・lint・型チェックを通過させる | TASK-004,TASK-006,TASK-008,TASK-009 |
+| TASK-011 | ✅ | .pre-commit-config.yamlを作成しフックをインストールする | - |
 
 ## タスク詳細
 
@@ -80,4 +81,4 @@ Goal: streamlit-rbac v0.1.0 の全機能実装・テスト・品質チェック�
 | ---- | ---- | ---- | ---- |
 | BACKLOG-001 | ⏳ | PyPIへのパッケージ公開手順を整備する | - |
 | BACKLOG-002 | ⏳ | CI/CDパイプライン（GitHub Actions）を構築する | - |
-| BACKLOG-003 | ⏳ | pre-commitフックの設定ファイルを作成する | - |
+| BACKLOG-003 | 🚫 | pre-commitフックの設定ファイルを作成する（TASK-011に昇格） | - |

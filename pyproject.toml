@@ -1,14 +1,14 @@
 [project]
 name = "streamlit-rbac"
 version = "0.1.0"
-description = "Library description"
+description = "Lightweight RBAC library for Streamlit applications"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
 authors = [
-    { name = "Author Name", email = "author@example.com" }
+    { name = "izuno4t" }
 ]
-keywords = ["keyword1", "keyword2"]
+keywords = ["streamlit", "rbac", "access-control", "authorization", "role-based"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -22,6 +22,7 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
+streamlit = ["streamlit>=1.24.0"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.0",
@@ -32,9 +33,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/username/streamlit-rbac"
-Repository = "https://github.com/username/streamlit-rbac"
-Issues = "https://github.com/username/streamlit-rbac/issues"
+Homepage = "https://github.com/izuno4t/streamlit-rbac"
+Repository = "https://github.com/izuno4t/streamlit-rbac"
+Issues = "https://github.com/izuno4t/streamlit-rbac/issues"
 
 [build-system]
 requires = ["hatchling"]
