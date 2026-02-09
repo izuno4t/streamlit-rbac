@@ -1,0 +1,44 @@
+{
+    "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+    "version": "0.2",
+    "language": "en",
+    "ignorePaths": [
+        ".git",
+        ".venv",
+        ".mypy_cache",
+        ".ruff_cache",
+        ".pytest_cache",
+        "build",
+        "dist",
+        "*.lock",
+        "uv.lock"
+    ],
+    "words": [
+        "streamlit",
+        "rbac",
+        "hatchling",
+        "mypy",
+        "ruff",
+        "taplo",
+        "pytest",
+        "cov",
+        "pyproject",
+        "snakecase",
+        "functools",
+        "wraps",
+        "frozenset",
+        "getattr",
+        "paramspec",
+        "typevar",
+        "docstrings",
+        "Entra",
+        "loaders",
+        "izuno"
+    ],
+    "enableFiletypes": [
+        "python",
+        "markdown",
+        "toml",
+        "yaml"
+    ]
+}
