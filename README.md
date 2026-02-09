@@ -1,22 +1,53 @@
 # streamlit-rbac
 
-Lightweight Role-Based Access Control (RBAC) library for Streamlit applications.
+[![CI](https://github.com/izuno4t/streamlit-rbac/actions/workflows/ci.yml/badge.svg)](https://github.com/izuno4t/streamlit-rbac/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/streamlit-rbac)](https://pypi.org/project/streamlit-rbac/)
+[![Python](https://img.shields.io/pypi/pyversions/streamlit-rbac)](https://pypi.org/project/streamlit-rbac/)
+[![License](https://img.shields.io/github/license/izuno4t/streamlit-rbac)](https://github.com/izuno4t/streamlit-rbac/blob/main/LICENSE)
+
+**Lightweight Role-Based Access Control (RBAC) library for Streamlit applications.**
 
 Inspired by Spring Security's authorization API,
 `streamlit-rbac` provides a thin, declarative layer for role-based access control
 — without pulling in authentication, user management, or any heavyweight framework.
 
-## Features
+---
 
-- **Pure function core** — `has_role()`, `has_any_role()`, `has_all_roles()` are stateless
-  and side-effect-free, making them trivial to unit test.
+## ✨ Features
+
+- **Pure function core** — `has_role()`, `has_any_role()`, `has_all_roles()`
+  are stateless and side-effect-free, making them trivial to unit test.
 - **Declarative decorator** — `@require_roles()` guards functions with a single line.
-- **Streamlit integration** — `authorize_page()` stops unauthorized page rendering via `st.stop()`.
+- **Streamlit integration** — `authorize_page()` stops unauthorized page rendering
+  via `st.stop()`.
 - **Bring your own auth** — inject any `role_loader` function to resolve roles
   from IdP tokens, session state, databases, or anything else.
-- **Zero required dependencies** — core functions use only the Python standard library. Streamlit is an optional dependency.
+- **Zero required dependencies** — core functions use only the Python standard library.
+  Streamlit is an optional dependency.
 
-## Installation
+---
+
+## 🏗️ Architecture
+
+```text
++---------------------------------------------+
+|          Streamlit Integration               |  authorize_page()
+|          (optional dependency)               |
++---------------------------------------------+
+|          Decorator Layer                     |  @require_roles()
++---------------------------------------------+
+|          Core Functions                      |  has_role()
+|          (pure, zero dependencies)           |  has_any_role()
+|                                              |  has_all_roles()
++---------------------------------------------+
+```
+
+Each layer depends only on the one below it.
+Core functions work anywhere — no Streamlit required.
+
+---
+
+## 📦 Installation
 
 ```bash
 pip install streamlit-rbac
@@ -27,7 +58,9 @@ pip install streamlit-rbac[streamlit]
 
 > **Requires Python 3.11+**
 
-## Quick Start
+---
+
+## 🚀 Quick Start
 
 ### Pure functions (great for testing)
 
@@ -60,7 +93,8 @@ def get_user_roles() -> list[str]:
 has_role("Admin", role_loader=get_user_roles)  # True
 ```
 
-> `user_roles` and `role_loader` are mutually exclusive — pass one or the other, never both.
+> `user_roles` and `role_loader` are mutually exclusive
+> — pass one or the other, never both.
 
 ### Decorator
 
@@ -72,7 +106,8 @@ def delete_user(user_id: str) -> None:
     ...
 ```
 
-Raises `PermissionError` if the user lacks the required role. An optional `on_denied` callback runs before the error:
+Raises `PermissionError` if the user lacks the required role.
+An optional `on_denied` callback runs before the error:
 
 ```python
 @require_roles("Admin", role_loader=get_user_roles, on_denied=log_violation)
@@ -99,7 +134,9 @@ st.title("Admin Page")  # Only rendered if authorized
 If the user lacks the required role, `authorize_page` displays an error message
 and calls `st.stop()` — nothing below it executes.
 
-## Component-Level Control
+---
+
+## 🎛️ Component-Level Control
 
 Mix page guards with inline checks for fine-grained control:
 
@@ -115,74 +152,56 @@ if has_role("SuperAdmin", role_loader=get_user_roles):
         st.write("Dangerous operations...")
 ```
 
-## API Reference
+---
+
+## 📖 API Reference
 
 ### Core Functions
 
 | Function | Description |
-| -------- | ----------- |
-| `has_role(required, *, user_roles=None, role_loader=None)` | Check for a single role |
-| `has_any_role(*required, *, user_roles=None, role_loader=None)` | Check for any of the given roles (OR) |
-| `has_all_roles(*required, *, user_roles=None, role_loader=None)` | Check for all of the given roles (AND) |
+| --- | --- |
+| `has_role(required, *, user_roles, role_loader)` | Single role check |
+| `has_any_role(*required, *, user_roles, role_loader)` | Any of the given roles (OR) |
+| `has_all_roles(*required, *, user_roles, role_loader)` | All of the given roles (AND) |
 
-All return `bool`. All raise `ValueError` if both or neither of `user_roles` / `role_loader` are provided.
+All return `bool`.
+All raise `ValueError` if both or neither of `user_roles` / `role_loader` are provided.
 
-**Edge cases:** `has_any_role()` with no required roles returns `False`.
+**Edge cases:**
+`has_any_role()` with no required roles returns `False`.
 `has_all_roles()` with no required roles returns `True` (vacuous truth).
 
 ### Decorator API
 
 | Function | Description |
-| -------- | ----------- |
-| `@require_roles(*roles, *, user_roles=None, role_loader=None, on_denied=None)` | Guard a function (OR logic). Raises `PermissionError` on denial. |
+| --- | --- |
+| `@require_roles(*roles, *, user_roles, role_loader, on_denied)` | Guard a function (OR logic). Raises `PermissionError` on denial. |
 
 ### Streamlit Integration
 
 | Function | Description |
-| -------- | ----------- |
-| `authorize_page(*roles, *, role_loader, login_url=None, denied_message=...)` | Page-level guard. Calls `st.stop()` on denial. |
+| --- | --- |
+| `authorize_page(*roles, *, role_loader, login_url, denied_message)` | Page-level guard. Calls `st.stop()` on denial. |
 
 ### Types
 
 | Type | Definition |
-| ---- | ---------- |
+| --- | --- |
 | `RoleLoader` | `Callable[[], Iterable[str]]` |
 | `OnDeniedHandler` | `Callable[[], None]` |
 
-## Design Principles
+---
 
-**Authorization only.**
-No authentication, no user management, no database schemas.
-This library answers one question: *does this user have the required role?*
+## 💡 Design Principles
 
-**Developer stays in control.**
-Role resolution is entirely your responsibility via `role_loader`.
-The library never dictates where roles come from.
+| Principle | Detail |
+| --- | --- |
+| **Authorization only** | No authentication, no user management, no database schemas. This library answers one question: *does this user have the required role?* |
+| **Developer stays in control** | Role resolution is entirely your responsibility via `role_loader`. The library never dictates where roles come from. |
+| **Pure core, optional integration** | Core functions have zero dependencies. Streamlit is only imported when you use `authorize_page()`. |
 
-**Pure core, optional integration.**
-Core functions have zero dependencies.
-Streamlit is only imported when you use `authorize_page()`.
+---
 
-**Spring Security heritage, Pythonic API.**
-Familiar concepts (`hasRole` → `has_role`, `@PreAuthorize` → `@require_roles`),
-expressed with keyword-only arguments, type hints, and decorators.
-
-## Development
-
-```bash
-# Clone and install
-git clone https://github.com/your-org/streamlit-rbac.git
-cd streamlit-rbac
-uv sync --all-extras
-
-# Run tests
-uv run pytest --cov
-
-# Lint and type check
-uv run ruff check src tests
-uv run mypy src
-```
-
-## License
+## 📄 License
 
 MIT
