@@ -31,8 +31,7 @@ Streamlit向け軽量RBACライブラリ アプリケーション仕様書
   - [5.1 authorize_page()](#51-authorize_page)
 - [6. エラー仕様](#6-エラー仕様)
 - [7. 統合シナリオ](#7-統合シナリオ)
-  - [7.1 Microsoft Entra ID連携](#71-microsoft-entra-id連携)
-  - [7.2 マルチページアプリケーション構成例](#72-マルチページアプリケーション構成例)
+  - [7.1 マルチページアプリケーション構成例](#71-マルチページアプリケーション構成例)
 - [8. 非機能仕様](#8-非機能仕様)
 - [9. 要件トレーサビリティ](#9-要件トレーサビリティ)
 
@@ -306,41 +305,7 @@ authorize_page("Admin", role_loader=get_user_roles, login_url="/login")
 
 ## 7. 統合シナリオ
 
-### 7.1 Microsoft Entra ID連携
-
-認証フロー自体は本ライブラリのスコープ外である。`st.session_state` にトークンクレームが格納されていることを前提とし、そこからロールを取得する `role_loader` を開発者が実装する。
-
-```text
-┌──────────┐     ┌──────────────┐     ┌───────────────────┐
-│  Browser  │────▶│  Streamlit   │────▶│  Microsoft        │
-│           │◀────│  App         │◀────│  Entra ID         │
-└──────────┘     └──────┬───────┘     └───────────────────┘
-                        │
-                  session_state に
-                  token_claims を格納
-                        │
-                        ▼
-                 ┌──────────────┐
-                 │ role_loader  │  token_claims["roles"] を返却
-                 │ (開発者実装)  │
-                 └──────┬───────┘
-                        │
-                        ▼
-                 ┌──────────────┐
-                 │ authorize_page() │  ロール判定 → 許可 or 停止
-                 │ has_role()   │
-                 └──────────────┘
-```
-
-```python
-def entra_role_loader() -> list[str]:
-    token_claims = st.session_state.get("token_claims", {})
-    return token_claims.get("roles", [])
-
-authorize_page("Admin", role_loader=entra_role_loader)
-```
-
-### 7.2 マルチページアプリケーション構成例
+### 7.1 マルチページアプリケーション構成例
 
 ```python
 # app.py - アプリケーション共通のロールローダー

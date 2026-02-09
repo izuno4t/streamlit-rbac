@@ -13,7 +13,7 @@ Inspired by Spring Security's authorization API,
 - **Declarative decorator** — `@require_roles()` guards functions with a single line.
 - **Streamlit integration** — `authorize_page()` stops unauthorized page rendering via `st.stop()`.
 - **Bring your own auth** — inject any `role_loader` function to resolve roles
-  from Entra ID tokens, session state, databases, or anything else.
+  from IdP tokens, session state, databases, or anything else.
 - **Zero required dependencies** — core functions use only the Python standard library. Streamlit is an optional dependency.
 
 ## Installation
@@ -96,23 +96,8 @@ authorize_page("Admin", role_loader=get_user_roles)
 st.title("Admin Page")  # Only rendered if authorized
 ```
 
-If the user lacks the required role, `authorize_page` displays an error message and calls `st.stop()` — nothing below it executes.
-
-## Microsoft Entra ID Integration
-
-`streamlit-rbac` doesn't handle authentication — that's your job.
-Once you have token claims in session state, wire up a role loader:
-
-```python
-import streamlit as st
-from streamlit_rbac import authorize_page
-
-def entra_role_loader() -> list[str]:
-    token_claims = st.session_state.get("token_claims", {})
-    return token_claims.get("roles", [])
-
-authorize_page("Admin", role_loader=entra_role_loader)
-```
+If the user lacks the required role, `authorize_page` displays an error message
+and calls `st.stop()` — nothing below it executes.
 
 ## Component-Level Control
 

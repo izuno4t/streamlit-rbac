@@ -47,7 +47,7 @@ Streamlitはデータ分析やAIアプリケーションの迅速な開発に適
 
 - Streamlitアプリケーションに宣言的なアクセス制御を提供する
 - ロール取得ロジックを開発者が自由に実装できる拡張性を確保する
-- Microsoft Entra ID等のIdPとの連携を容易にする
+- 任意のIdPとの連携を容易にする（`role_loader` による外部注入）
 - ユニットテストが容易なAPIを提供する
 
 ### 1.3 スコープ
@@ -250,18 +250,6 @@ st.title("管理者ページ")
 if has_role("Admin", role_loader=get_user_roles):
     if st.button("ユーザー削除"):
         delete_user()
-```
-
-### 5.3 Microsoft Entra IDとの連携
-
-```python
-# Entra IDのトークンからロールを取得
-def entra_role_loader() -> list[str]:
-    token_claims = st.session_state.get("token_claims", {})
-    return token_claims.get("roles", [])
-
-# 使用
-authorize_page("Admin", role_loader=entra_role_loader)
 ```
 
 ---

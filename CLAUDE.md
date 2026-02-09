@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-streamlit-rbac is a lightweight RBAC (Role-Based Access Control) library for Streamlit applications. It provides stateless role-checking functions, a decorator for declarative access control, and optional Streamlit session integration. Core functions have zero dependencies; Streamlit is an optional dependency.
+streamlit-rbac is a lightweight RBAC (Role-Based Access Control) library for Streamlit applications.
+It provides stateless role-checking functions, a decorator for declarative access control,
+and optional Streamlit session integration.
+Core functions have zero dependencies; Streamlit is an optional dependency.
 
 ## Development Commands
 
@@ -51,7 +54,8 @@ Core (_core.py)                        ← zero dependencies (pure functions)
 
 - **_types.py** — Type aliases: `RoleLoader`, `OnDeniedHandler`
 - **_exceptions.py** — Empty placeholder for future custom exceptions
-- **__init__.py** — Re-exports core/decorator/types; uses PEP 562 `__getattr__` for lazy-loading Streamlit functions (so `import streamlit` is deferred until actual use)
+- **__init__.py** — Re-exports core/decorator/types; uses PEP 562 `__getattr__`
+  for lazy-loading Streamlit functions (so `import streamlit` is deferred until actual use)
 
 All internal modules are prefixed with `_`. Users import from `streamlit_rbac` directly.
 
