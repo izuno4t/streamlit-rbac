@@ -13,11 +13,12 @@ Core functions have zero dependencies; Streamlit is an optional dependency.
 
 ```bash
 # Setup
-uv sync --extra dev          # Install all dependencies including dev
+uv sync --extra dev          # Install dev dependencies
+uv sync --extra dev --extra streamlit  # Include streamlit (needed for full test suite)
 
 # Testing
 uv run pytest                # Run all tests
-uv run pytest --cov          # Run tests with coverage (target: 90%+)
+uv run pytest --cov          # Run tests with coverage (CI enforces --cov-fail-under=90)
 uv run pytest tests/test_core.py              # Run single test file
 uv run pytest tests/test_core.py::TestHasRole # Run single test class
 uv run pytest -k "test_name"                  # Run tests matching pattern
@@ -26,12 +27,14 @@ uv run pytest -k "test_name"                  # Run tests matching pattern
 uv run ruff check .          # Lint
 uv run ruff check --fix .    # Lint with auto-fix
 uv run ruff format .         # Format
+make format                  # Format + auto-fix lint (runs both commands)
 
 # Type Checking
 uv run mypy .                # Type check (strict mode enabled)
 
 # Run all checks at once
 make check                   # Runs lint, typecheck, test sequentially
+make dev                     # Install deps + pre-commit hooks (ruff + mypy)
 
 # Markdown linting
 markdownlint-cli2 "**/*.md"
@@ -66,6 +69,9 @@ All internal modules are prefixed with `_`. Users import from `streamlit_rbac` d
 - `_resolve_roles()` returns `frozenset` for set-operation efficiency
 - `@require_roles` uses OR logic; always raises `PermissionError` (even after `on_denied` callback)
 - `authorize_page()` never raises — uses `st.error()` + `st.stop()` instead
+  - Only accepts `role_loader` (not `user_roles`) — always requires a callable
+  - Handles unauthenticated users (empty roles): shows login link if `login_url` provided, otherwise `st.error()`
+  - Default denied message is in Japanese
 - Streamlit is imported inside functions, not at module level (optional dependency pattern)
 - `ParamSpec`/`TypeVar` preserve decorated function signatures for mypy strict
 

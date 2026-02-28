@@ -89,3 +89,18 @@ class TestRequireRoles:
 
         with pytest.raises(PermissionError, match="Admin"):
             action()
+
+    def test_empty_allowed_roles_raises_value_error(self) -> None:
+        with pytest.raises(ValueError, match="allowed_roles must not be empty"):
+            require_roles(user_roles=["Admin"])
+
+    def test_role_loader_exception_propagation(self) -> None:
+        def bad_loader() -> list[str]:
+            raise RuntimeError("loader failed")
+
+        @require_roles("Admin", role_loader=bad_loader)
+        def action() -> str:
+            return "ok"
+
+        with pytest.raises(RuntimeError, match="loader failed"):
+            action()

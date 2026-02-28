@@ -39,7 +39,9 @@ def _resolve_roles(
     if user_roles is not None:
         return frozenset(user_roles)
 
-    assert role_loader is not None
+    if role_loader is None:  # pragma: no cover
+        msg = "Either user_roles or role_loader must be specified."
+        raise ValueError(msg)
     return frozenset(role_loader())
 
 

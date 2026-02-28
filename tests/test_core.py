@@ -77,3 +77,28 @@ class TestHasAllRoles:
     def test_with_role_loader_partial(self) -> None:
         loader = lambda: ["Admin"]  # noqa: E731
         assert has_all_roles("Admin", "Auditor", role_loader=loader) is False
+
+
+class TestRoleLoaderExceptionPropagation:
+    """role_loader が例外を送出した場合にそのまま伝搬されることを検証する."""
+
+    def test_has_role_propagates_loader_exception(self) -> None:
+        def bad_loader() -> list[str]:
+            raise RuntimeError("loader failed")
+
+        with pytest.raises(RuntimeError, match="loader failed"):
+            has_role("Admin", role_loader=bad_loader)
+
+    def test_has_any_role_propagates_loader_exception(self) -> None:
+        def bad_loader() -> list[str]:
+            raise RuntimeError("loader failed")
+
+        with pytest.raises(RuntimeError, match="loader failed"):
+            has_any_role("Admin", role_loader=bad_loader)
+
+    def test_has_all_roles_propagates_loader_exception(self) -> None:
+        def bad_loader() -> list[str]:
+            raise RuntimeError("loader failed")
+
+        with pytest.raises(RuntimeError, match="loader failed"):
+            has_all_roles("Admin", role_loader=bad_loader)

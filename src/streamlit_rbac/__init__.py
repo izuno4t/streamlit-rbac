@@ -7,6 +7,7 @@ from streamlit_rbac._types import OnDeniedHandler, RoleLoader
 __all__ = [
     "OnDeniedHandler",
     "RoleLoader",
+    "authorize_page",
     "has_all_roles",
     "has_any_role",
     "has_role",

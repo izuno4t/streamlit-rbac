@@ -3,6 +3,8 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 
 class TestAuthorizePage:
     def test_allowed(self) -> None:
@@ -68,3 +70,21 @@ class TestAuthorizePage:
             authorize_page("Admin", "Manager", role_loader=lambda: ["Manager"])
             mock_st.error.assert_not_called()
             mock_st.stop.assert_not_called()
+
+    def test_empty_allowed_roles_raises_value_error(self) -> None:
+        from streamlit_rbac._streamlit import authorize_page
+
+        with pytest.raises(ValueError, match="allowed_roles must not be empty"):
+            authorize_page(role_loader=lambda: ["Admin"])
+
+    def test_role_loader_exception_propagation(self) -> None:
+        mock_st = MagicMock()
+
+        def bad_loader() -> list[str]:
+            raise RuntimeError("loader failed")
+
+        with patch.dict("sys.modules", {"streamlit": mock_st}):
+            from streamlit_rbac._streamlit import authorize_page
+
+            with pytest.raises(RuntimeError, match="loader failed"):
+                authorize_page("Admin", role_loader=bad_loader)

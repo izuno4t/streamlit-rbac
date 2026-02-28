@@ -21,6 +21,10 @@ def authorize_page(
     denied_message: str = "このページへのアクセス権限がありません。",
 ) -> None:
     """ページ先頭でアクセス制御を行う."""
+    if not allowed_roles:
+        msg = "allowed_roles must not be empty."
+        raise ValueError(msg)
+
     import streamlit as st  # noqa: PLC0415
 
     user_roles = list(role_loader())
@@ -38,3 +42,4 @@ def authorize_page(
     if not has_any_role(*allowed_roles, user_roles=user_roles):
         st.error(denied_message)
         st.stop()
+        return

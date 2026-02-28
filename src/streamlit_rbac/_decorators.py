@@ -23,6 +23,9 @@ def require_roles(
     on_denied: OnDeniedHandler | None = None,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """関数実行前にロールチェックを行うデコレータ."""
+    if not allowed_roles:
+        msg = "allowed_roles must not be empty."
+        raise ValueError(msg)
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(func)
